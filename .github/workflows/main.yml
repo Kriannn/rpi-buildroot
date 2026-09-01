@@ -1,0 +1,52 @@
+name: Build Raspberry Pi Zero 2W Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libncurses-dev \
+            bison \
+            flex \
+            gettext \
+            texinfo \
+            libssl-dev \
+            rsync \
+            wget \
+            cpio \
+            python3 \
+            unzip \
+            bc \
+            git \
+            file
+
+      - name: Clone Buildroot
+        run: |
+          git clone --depth 1 https://gitlab.com/buildroot.org/buildroot.git buildroot
+
+      - name: Configure Buildroot
+        run: |
+          make -C buildroot defconfig BR2_DEFCONFIG="${GITHUB_WORKSPACE}/config/rpizero2w_defconfig"
+
+      - name: Build Image
+        run: |
+          make -C buildroot
+
+      - name: Upload SD Card Image
+        uses: actions/upload-artifact@v7
+        with:
+          name: rpizero2w-sdcard-img
+          path: buildroot/output/images/sdcard.img
+          if-no-files-found: error
+          retention-days: 7
